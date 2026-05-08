@@ -1,0 +1,51 @@
+{
+  "name": "safesandbox",
+  "version": "0.1.0",
+  "description": "Infinite undo for AI coding agents",
+  "keywords": [
+    "ai",
+    "sandbox",
+    "snapshot",
+    "git",
+    "cursor",
+    "claude-code",
+    "rollback",
+    "undo",
+    "cli"
+  ],
+  "license": "MIT",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Baukaalm/safesandbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Baukaalm/safesandbox/issues"
+  },
+  "homepage": "https://github.com/Baukaalm/safesandbox#readme",
+  "type": "module",
+  "bin": {
+    "safesandbox": "dist/cli.js"
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "chokidar": "^4.0.3",
+    "commander": "^13.1.0",
+    "ora": "^8.2.0",
+    "simple-git": "^3.27.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "^5.8.3"
+  }
+}

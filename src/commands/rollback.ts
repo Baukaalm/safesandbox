@@ -1,0 +1,101 @@
+import chalk from "chalk";
+import readline from "node:readline";
+import { SimpleGit } from "simple-git";
+import { getGit, SNAPSHOT_BRANCH } from "../core/git-utils.js";
+import { assertInitialized, loadMeta } from "../utils/config.js";
+
+const ask = (question: string): Promise<string> => {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) =>
+    rl.question(question, (ans) => {
+      rl.close();
+      resolve(ans);
+    }),
+  );
+};
+
+const getChangedFiles = async (git: SimpleGit, commit: string): Promise<string> => {
+  try {
+    const diff = await git.diff(["--stat", commit]);
+    return diff || "(no changes)";
+  } catch {
+    return "";
+  }
+};
+
+const resolveCommit = async (git: SimpleGit, cwd: string, id: number): Promise<string | undefined> => {
+  try {
+    const meta = await loadMeta(cwd);
+    const snapshot = meta.snapshots.find((s) => s.id === id);
+    if (snapshot) return snapshot.commit;
+  } catch {
+    // fall through
+  }
+
+  try {
+    const hash = (
+      await git.raw([
+        "log",
+        SNAPSHOT_BRANCH,
+        "--grep",
+        `safesnapshot:${id}`,
+        "-1",
+        "--format=%H",
+      ])
+    ).trim();
+    if (hash) return hash;
+  } catch {
+    // ignore
+  }
+  return undefined;
+};
+
+export const rollbackCommand = async (idStr: string) => {
+  const cwd = process.cwd();
+  try {
+    await assertInitialized(cwd);
+    const git = getGit(cwd);
+    const id = parseInt(idStr, 10);
+    if (Number.isNaN(id) || id <= 0) {
+      throw new Error("Snapshot ID must be a positive integer.");
+    }
+
+    const commit = await resolveCommit(git, cwd, id);
+    if (!commit) {
+      throw new Error(`Snapshot #${id} not found.`);
+    }
+
+    const summary = await getChangedFiles(git, commit);
+    const status = await git.status();
+    const dirty = !status.isClean();
+
+    console.log();
+    console.log(chalk.bold(`Rolling back to snapshot #${id}`));
+    console.log(chalk.gray(commit.slice(0, 7)));
+    console.log();
+
+    if (summary) {
+      console.log(chalk.bold("Files that will change:"));
+      console.log(summary);
+      console.log();
+    }
+
+    if (dirty) {
+      console.log(chalk.yellow("Warning: You have uncommitted changes. They will be overwritten.\n"));
+    }
+
+    const answer = await ask("Continue? [y/N] ");
+    if (answer.trim().toLowerCase() !== "y") {
+      console.log(chalk.gray("Rollback cancelled."));
+      return;
+    }
+
+    await git.raw(["checkout", commit, "--", "."]);
+    console.log();
+    console.log(chalk.green(`✓ Rolled back to snapshot #${id}`));
+    console.log(chalk.gray("  Use \"git reset\" if you want to unstage the changes."));
+  } catch (err) {
+    console.error(chalk.red("Error:"), err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+};
