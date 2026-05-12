@@ -26,8 +26,18 @@ const getChangedFiles = async (
   commit: string,
 ): Promise<string> => {
   try {
-    const diff = await git.diff(["--stat", commit]);
-    return diff || "(no changes)";
+    // Compare HEAD to the snapshot. If no HEAD (fresh repo), fall back to
+    // listing the snapshot's files so the output is still informative.
+    const hasHead = await git.raw(["rev-parse", "--verify", "HEAD"]).then(() => true).catch(() => false);
+    if (hasHead) {
+      const diff = await git.diff(["--stat", "HEAD", commit]);
+      return diff || "(no changes)";
+    }
+    const files = (await git.raw(["ls-tree", "-r", "--name-only", commit]))
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+    return files.length ? `Will restore ${files.length} file(s):\n` + files.map(f => `  ${f}`).join("\n") : "(no changes)";
   } catch {
     return "";
   }
