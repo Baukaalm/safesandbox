@@ -15,12 +15,21 @@ export const createSnapshot = async (
   cwd: string,
   reason: string,
   filesChanged: number,
-): Promise<SnapshotMeta> => {
+): Promise<SnapshotMeta | null> => {
   await git.add(["--all"]);
 
   const tree = (await git.raw(["write-tree"])).trim();
 
   const exists = await branchExists(git, SNAPSHOT_BRANCH);
+
+  if (exists) {
+    const headTree = (await git.raw(["rev-parse", `${SNAPSHOT_BRANCH}^{tree}`])).trim();
+    if (tree === headTree) {
+      // Unstage files after snapshot, but keep working tree unchanged.
+      await git.raw(["reset"]);
+      return null;
+    }
+  }
 
   let parent: string | undefined;
   if (exists) {

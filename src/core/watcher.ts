@@ -75,9 +75,6 @@ export const startWatcher = async (
     const count = batch.size;
     const duration = Date.now() - firstChangeAt;
 
-    changedPaths = new Set();
-    firstChangeAt = 0;
-
     const files = Array.from(batch);
     const hasImportant = files.some((f) => IMPORTANT_FILES.has(path.basename(f)));
 
@@ -90,9 +87,18 @@ export const startWatcher = async (
         ? `${path.basename(files.find((f) => IMPORTANT_FILES.has(path.basename(f)))!)} modified`
         : `${count} files changed in ${formatDuration(duration)}`;
 
+    // Enter cooldown immediately so filesystem events triggered by the
+    // snapshot creation itself (git add, git reset) are ignored.
+    cooldownUntil = Date.now() + COOLDOWN_MS;
+    changedPaths = new Set();
+    firstChangeAt = 0;
+
     try {
       const snapshot = await createSnapshot(git, cwd, reason, count);
-      cooldownUntil = Date.now() + COOLDOWN_MS;
+      if (!snapshot) {
+        // Tree identical to previous snapshot — nothing changed meaningfully
+        return;
+      }
       onSnapshot({ id: snapshot.id, reason, filesChanged: count, durationMs: duration });
     } catch (err) {
       console.error("[SafeSandbox] Failed to create snapshot:", err);

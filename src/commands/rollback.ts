@@ -127,11 +127,19 @@ export const rollbackCommand = async (idStr: string) => {
         status.files.length,
       );
 
-      console.log(
-        chalk.gray(
-          `Created emergency backup snapshot #${backup.id} before rollback.`,
-        ),
-      );
+      if (backup) {
+        console.log(
+          chalk.gray(
+            `Created emergency backup snapshot #${backup.id} before rollback.`,
+          ),
+        );
+      } else {
+        console.log(
+          chalk.gray(
+            "Working tree identical to last snapshot — no emergency backup needed.",
+          ),
+        );
+      }
     }
 
     await git.raw(["checkout", commit, "--", "."]);
