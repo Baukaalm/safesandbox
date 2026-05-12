@@ -5,3 +5,5 @@ dist/
 CLAUDE.md
 
 assets/demo.mp4
+assets/demo.tape
+assets/demo-setup.sh

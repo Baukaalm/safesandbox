@@ -1,6 +1,5 @@
 Require safesandbox
 
-Output assets/demo.mp4
 Output assets/demo.gif
 
 Set FontSize 15
@@ -11,7 +10,7 @@ Set Shell "zsh"
 Set Theme "Dracula"
 
 Hide
-Type "bash /Users/mac-msp-31/Documents/www/safesandbox/assets/demo-setup.sh && cd /tmp/agentdemo"
+Type "bash $SAFESANDBOX_ROOT/assets/demo-setup.sh && cd /tmp/agentdemo"
 Enter
 Sleep 1s
 Show

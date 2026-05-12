@@ -37,7 +37,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm build",
-    "demo:record": "vhs assets/demo.tape"
+    "demo:record": "SAFESANDBOX_ROOT=$(pwd) PATH=\"$(pnpm bin -g):$PATH\" vhs assets/demo.tape"
   },
   "dependencies": {
     "chalk": "^5.4.1",
