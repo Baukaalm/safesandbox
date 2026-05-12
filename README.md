@@ -4,6 +4,17 @@
 
 SafeSandbox is a local-first developer tool that automatically creates snapshots and checkpoints while AI coding agents (Cursor, Claude Code, Codex, Aider, etc.) modify your repository.
 
+<p align="center">
+  <img
+    src="assets/demo.gif"
+    width="800"
+    alt="SafeSandbox demo: init, watch in the background, two snapshots after file changes, timeline, rollback, and restored files"
+  />
+</p>
+<p align="center">
+  <em>Auto-captures every AI edit — rollback in seconds with one command.</em>
+</p>
+
 ## What it does
 
 - **Automatic snapshots** — detects bursts of file changes and creates restore points

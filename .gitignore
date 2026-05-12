@@ -3,3 +3,5 @@ dist/
 *.log
 .DS_Store
 CLAUDE.md
+
+assets/demo.mp4
