@@ -2,13 +2,13 @@
 
 > **Infinite undo for AI coding agents.**
 
-SafeSandbox is a local-first developer tool that automatically creates snapshots and checkpoints while AI coding agents (Cursor, Claude Code, Codex, Aider, etc.) modify your repository.
+SafeSandbox is a local-first CLI tool that automatically creates git snapshots while AI coding agents (Cursor, Claude Code, Codex, Aider, etc.) modify your repository. If an agent breaks something, roll back in seconds.
 
 <p align="center">
   <img
     src="assets/demo.gif"
     width="800"
-    alt="SafeSandbox demo: init, watch in the background, two snapshots after file changes, timeline, rollback, and restored files"
+    alt="SafeSandbox demo: init, watch in the background, snapshots after file changes, manual snapshot, timeline, rollback, and restored files"
   />
 </p>
 <p align="center">
@@ -18,23 +18,22 @@ SafeSandbox is a local-first developer tool that automatically creates snapshots
 ## What it does
 
 - **Automatic snapshots** — detects bursts of file changes and creates restore points
-- **Rollback** — restore your codebase to any previous snapshot in seconds
+- **Manual snapshots** — pin a named checkpoint before a risky prompt
+- **Rollback** — restore your full codebase (including new files) to any snapshot
 - **Timeline** — view a human-readable history of what changed
-- **Protection from destructive AI edits** — never lose working code again
+- **Agent rules** — writes `AGENTS.md` with guardrails readable by all major AI agents
 
 ## What it is NOT
 
 - Not a cloud service — everything stays on your machine
-- Not a remote IDE
-- Not a Docker container
-- Not an AI model
-- Not a code editor
+- Not a remote IDE, Docker container, or AI model
+- Not a replacement for `git commit` — it's a safety net between commits
 
 ## What it IS
 
 - A local CLI tool
 - A filesystem watcher (via chokidar)
-- A git-based snapshot manager
+- A git-based snapshot manager with no impact on your main branch history
 
 ## Installation
 
@@ -57,17 +56,21 @@ npx safesandbox init
 cd my-project
 safesandbox init
 
-# 2. Start watching for changes
+# 2. Pin a checkpoint before a risky prompt
+safesandbox snapshot "before auth refactor"
+
+# 3. Start watching for automatic snapshots
 safesandbox watch
 
-# 3. Let your AI agent work...
+# 4. Let your AI agent work...
 # SafeSandbox auto-creates snapshots when it detects bursts of edits
 
-# 4. View timeline
+# 5. View history
 safesandbox timeline
 
-# 5. Roll back if something goes wrong
-safesandbox rollback 12
+# 6. Roll back if something goes wrong
+safesandbox rollback latest   # most recent snapshot
+safesandbox rollback 3        # specific snapshot by ID
 ```
 
 ## Commands
@@ -76,54 +79,68 @@ safesandbox rollback 12
 
 Sets up SafeSandbox in the current repository. Creates:
 
-- `.safesandbox/` directory with metadata storage
-- A hidden snapshot branch for internal commits
-- Config file with default thresholds
+- `.safesandbox/` directory with metadata and config
+- A hidden snapshot branch (`safesandbox/snapshots`) for internal commits
+- `AGENTS.md` with guardrails for AI agents (Cursor, Claude Code, Codex, Aider)
 
 ### `safesandbox watch`
 
-Starts filesystem monitoring. Detects:
+Starts filesystem monitoring and auto-creates snapshots when it detects a burst of changes:
 
-- Multiple rapid file changes
+- Multiple rapid file changes (configurable threshold)
 - Deleted files
-- `package.json` changes
-- Lockfile changes (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`)
-
-Snapshots are batched — not every single file write triggers one. You will see output like:
+- Important file changes: `package.json`, lockfiles, `Dockerfile`, `.env`, config files
 
 ```
 [SafeSandbox]
-Snapshot #12 created
-Reason: 24 files changed in 8 seconds
+Snapshot #3 created
+Reason: 12 files changed in 6 seconds
+```
+
+### `safesandbox snapshot [memo]`
+
+Manually create a named snapshot at any moment — useful before a large or risky prompt:
+
+```bash
+safesandbox snapshot "before adding payments"
 ```
 
 ### `safesandbox timeline`
 
-Shows snapshot history:
+Shows snapshot history, newest first:
 
 ```
-#14 — 24 files changed
-#13 — package.json modified
-#12 — deleted docker-compose.yml
+#3 — 12 files changed in 6 seconds    2m ago
+#2 — package.json modified             8m ago
+#1 — before adding payments           15m ago
 ```
 
 ### `safesandbox rollback <id>`
 
-Restores the repository to the state at snapshot `<id>`. Asks for confirmation before destructive changes.
+Restores the full repository to the state at snapshot `<id>`. Also removes any files that didn't exist at that snapshot.
+
+```bash
+safesandbox rollback latest    # most recent snapshot
+safesandbox rollback 3         # specific ID
+safesandbox rollback 3 --force # skip confirmation (for scripts)
+```
+
+If you have uncommitted changes, SafeSandbox creates an emergency backup snapshot before rolling back.
 
 ## How it works
 
-SafeSandbox uses **git internally** for snapshots:
+SafeSandbox uses **git internally** — no extra storage format:
 
-- A hidden branch stores internal commits
-- Metadata maps snapshot IDs to commit hashes
-- Rollback uses `git checkout` + `git restore` for safe, precise restoration
+- A hidden branch (`safesandbox/snapshots`) stores snapshot commits
+- `git add --all` + `git write-tree` captures the full tree including untracked files
+- Rollback uses `git checkout` + cleanup of files not present in the target snapshot
+- Metadata in `.safesandbox/meta.json` maps snapshot IDs to commit hashes
 
-No Docker. No overlayfs. No cloud. Just your local git repo + a smart watcher.
+No Docker. No overlayfs. No cloud. Just your local git repo.
 
 ## Configuration
 
-After `init`, a config file lives at `.safesandbox/config.json`:
+After `init`, edit `.safesandbox/config.json` to tune behavior:
 
 ```json
 {
@@ -133,46 +150,57 @@ After `init`, a config file lives at `.safesandbox/config.json`:
 }
 ```
 
-- `thresholdFiles` — minimum files changed to trigger a snapshot
-- `thresholdSeconds` — time window for batching changes
+| Field | Description |
+|---|---|
+| `thresholdFiles` | Minimum files changed to trigger an auto-snapshot |
+| `thresholdSeconds` | Debounce window — waits this long after the last change before snapshotting |
+| `ignoredPaths` | Paths to exclude from the watcher |
 
 ## Example session
 
 ```bash
 $ cd my-cursor-project
-
 $ safesandbox init
-[SafeSandbox] Initialized in /Users/me/my-cursor-project
+✓ SafeSandbox initialized
+  Snapshot branch: safesandbox/snapshots
+  Metadata: /Users/me/my-cursor-project/.safesandbox
+  Agent rules: AGENTS.md
+
+$ safesandbox snapshot "before auth refactor"
+✓ Snapshot #1 created
+  Reason: before auth refactor
 
 $ safesandbox watch
-[SafeSandbox] Watching for changes...
+⠿ Watching for changes...
 
-# ... you prompt Cursor to "add auth" ...
-
-[SafeSandbox]
-Snapshot #1 created
-Reason: 12 files changed in 6 seconds
-
-# ... you prompt again, it deletes something important ...
+# ... Cursor adds 14 files for the auth feature ...
 
 [SafeSandbox]
 Snapshot #2 created
-Reason: 3 files changed in 4 seconds
+Reason: 14 files changed in 8 seconds
+
+# ... you ask Cursor to clean up and it deletes something important ...
+
+[SafeSandbox]
+Snapshot #3 created
+Reason: 5 files changed in 4 seconds
 
 $ safesandbox timeline
-#2 — 3 files changed
-#1 — 12 files changed (auth feature)
+#3 — 5 files changed in 4 seconds     12s ago
+#2 — 14 files changed in 8 seconds    45s ago
+#1 — before auth refactor              2m ago
 
 $ safesandbox rollback 1
-[SafeSandbox] This will restore 12 files to the state at snapshot #1.
-Are you sure? (y/N) y
-[SafeSandbox] Rolled back to snapshot #1.
+Rolling back to snapshot #1
+...
+Continue? [y/N] y
+✓ Rolled back to snapshot #1
 ```
 
 ## Requirements
 
 - Node.js >= 20
-- Git repository (run `git init` first if needed)
+- Git repository (`git init` first if needed)
 
 ## License
 

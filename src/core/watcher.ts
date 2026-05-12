@@ -43,13 +43,14 @@ export const startWatcher = async (
 ): Promise<FSWatcher> => {
   const cfg = await loadConfig(cwd);
 
+  const configIgnored = cfg.ignoredPaths.map((p) =>
+    p.startsWith("*") ? p : `**/${p}/**`,
+  );
+
   const watcher = chokidar.watch(cwd, {
     ignored: [
-      "**/node_modules/**",
+      ...configIgnored,
       "**/.git/**",
-      "**/.safesandbox/**",
-      "**/dist/**",
-      "**/build/**",
       "**/.vscode/**",
       "**/.idea/**",
       "**/*.log",

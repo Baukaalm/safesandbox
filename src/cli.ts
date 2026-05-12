@@ -5,13 +5,14 @@ import { initCommand } from "./commands/init.js";
 import { watchCommand } from "./commands/watch.js";
 import { timelineCommand } from "./commands/timeline.js";
 import { rollbackCommand } from "./commands/rollback.js";
+import { snapshotCommand } from "./commands/snapshot.js";
 
 const program = new Command();
 
 program
   .name("safesandbox")
   .description("Infinite undo for AI coding agents")
-  .version("0.1.0");
+  .version("0.4.0");
 
 program
   .command("init")
@@ -24,13 +25,19 @@ program
   .action(watchCommand);
 
 program
+  .command("snapshot [memo]")
+  .description("Manually create a snapshot with an optional label")
+  .action(snapshotCommand);
+
+program
   .command("timeline")
   .description("Show snapshot history")
   .action(timelineCommand);
 
 program
   .command("rollback <id>")
-  .description("Restore repository state to a snapshot")
-  .action(rollbackCommand);
+  .description("Restore repository state to a snapshot (use 'latest' for the most recent)")
+  .option("-f, --force", "skip confirmation prompt")
+  .action((id, opts) => rollbackCommand(id, opts));
 
 program.parse();

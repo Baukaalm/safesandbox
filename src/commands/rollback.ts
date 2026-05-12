@@ -1,5 +1,7 @@
 import chalk from "chalk";
 import readline from "node:readline";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { SimpleGit } from "simple-git";
 import { getGit, SNAPSHOT_BRANCH } from "../core/git-utils.js";
 import { createSnapshot } from "../core/snapshots.js";
@@ -69,7 +71,27 @@ const resolveCommit = async (
   return undefined;
 };
 
-export const rollbackCommand = async (idStr: string) => {
+const removeNewFiles = async (git: SimpleGit, cwd: string, targetCommit: string): Promise<void> => {
+  const snapshotFiles = new Set(
+    (await git.raw(["ls-tree", "-r", "--name-only", targetCommit])).trim().split("\n").filter(Boolean),
+  );
+  const status = await git.status();
+  const allTracked = await git.raw(["ls-files"]);
+  const trackedFiles = new Set(allTracked.trim().split("\n").filter(Boolean));
+  const untracked = status.not_added;
+
+  const toDelete = [
+    ...Array.from(trackedFiles).filter((f) => !snapshotFiles.has(f)),
+    ...untracked,
+  ];
+
+  for (const f of toDelete) {
+    const abs = path.join(cwd, f);
+    await fs.rm(abs, { recursive: true, force: true });
+  }
+};
+
+export const rollbackCommand = async (idStr: string, opts: { force?: boolean } = {}) => {
   const cwd = process.cwd();
 
   try {
@@ -77,10 +99,18 @@ export const rollbackCommand = async (idStr: string) => {
 
     const git = getGit(cwd);
 
-    const id = parseInt(idStr, 10);
+    const isLatest = idStr === "latest";
+    let id: number;
 
-    if (Number.isNaN(id) || id <= 0) {
-      throw new Error("Snapshot ID must be a positive integer.");
+    if (isLatest) {
+      const meta = await loadMeta(cwd);
+      if (meta.snapshots.length === 0) throw new Error("No snapshots yet.");
+      id = meta.snapshots[meta.snapshots.length - 1].id;
+    } else {
+      id = parseInt(idStr, 10);
+      if (Number.isNaN(id) || id <= 0) {
+        throw new Error("Snapshot ID must be a positive integer or 'latest'.");
+      }
     }
 
     const commit = await resolveCommit(git, cwd, id);
@@ -112,11 +142,12 @@ export const rollbackCommand = async (idStr: string) => {
       );
     }
 
-    const answer = await ask("Continue? [y/N] ");
-
-    if (answer.trim().toLowerCase() !== "y") {
-      console.log(chalk.gray("Rollback cancelled."));
-      return;
+    if (!opts.force) {
+      const answer = await ask("Continue? [y/N] ");
+      if (answer.trim().toLowerCase() !== "y") {
+        console.log(chalk.gray("Rollback cancelled."));
+        return;
+      }
     }
 
     if (dirty) {
@@ -143,6 +174,7 @@ export const rollbackCommand = async (idStr: string) => {
     }
 
     await git.raw(["checkout", commit, "--", "."]);
+    await removeNewFiles(git, cwd, commit);
     await git.raw(["reset"]);
 
     console.log();

@@ -3,48 +3,63 @@ Require safesandbox
 Output assets/demo.mp4
 Output assets/demo.gif
 
-Set FontSize 16
+Set FontSize 15
 Set Width 960
 Set Height 560
-Set TypingSpeed 40ms
+Set TypingSpeed 35ms
 Set Shell "zsh"
 Set Theme "Dracula"
 
 Hide
-Type "rm -rf /tmp/demo && mkdir /tmp/demo && cd /tmp/demo && git init"
+Type "bash /Users/mac-msp-31/Documents/www/safesandbox/assets/demo-setup.sh && cd /tmp/agentdemo"
 Enter
 Sleep 1s
 Show
-Sleep 500ms
+Sleep 300ms
+
+Type "ls src/"
+Enter
+Sleep 1500ms
 
 Type "safesandbox init"
 Enter
 Sleep 2s
 
-Type "set +m; safesandbox watch &"
+Type `safesandbox snapshot "clean project"`
 Enter
 Sleep 2s
 
-Type "for i in 1 2 3 4 5 6; do echo x > g$i.txt; done"
+Type "rm src/auth.js src/db.js"
 Enter
-Wait+Screen@45s /Snapshot #1 created/
+Sleep 500ms
 
-Type "rm g*.txt"
+Type `echo "TODO: rewrite" > src/app.js`
 Enter
-Sleep 18s
+Sleep 500ms
 
-Type "kill %1"
+Type "touch src/temp_1.js src/temp_2.js src/WIP.js"
+Enter
+Sleep 1s
+
+Type "ls src/"
+Enter
+Sleep 1500ms
+
+Type "cat src/app.js"
 Enter
 Sleep 2s
 
-Type "safesandbox timeline"
+Type "safesandbox rollback 1"
+Enter
+Sleep 1500ms
+Type "y"
 Enter
 Sleep 2s
 
-Type `printf 'y\n' | safesandbox rollback 1`
+Type "ls src/"
 Enter
-Sleep 2s
+Sleep 1500ms
 
-Type "ls g*.txt"
+Type "cat src/app.js"
 Enter
 Sleep 3s
