@@ -1,6 +1,6 @@
 {
   "name": "safesandbox",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Infinite undo for AI coding agents",
   "keywords": [
     "ai",
@@ -27,7 +27,9 @@
   "bin": {
     "safesandbox": "dist/cli.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "engines": {
     "node": ">=20.0.0"
   },
