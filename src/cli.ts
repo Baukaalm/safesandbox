@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name("safesandbox")
   .description("Infinite undo for AI coding agents")
-  .version("0.4.0");
+  .version("0.4.1");
 
 program
   .command("init")
