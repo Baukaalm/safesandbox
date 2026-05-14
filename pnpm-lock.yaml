@@ -17,6 +17,9 @@ importers:
       commander:
         specifier: ^13.1.0
         version: 13.1.0
+      ignore:
+        specifier: ^7.0.5
+        version: 7.0.5
       ora:
         specifier: ^8.2.0
         version: 8.2.0
@@ -90,6 +93,10 @@ packages:
   get-east-asian-width@1.6.0:
     resolution: {integrity: sha512-QRbvDIbx6YklUe6RxeTeleMR0yv3cYH6PsPZHcnVn7xv7zO1BHN8r0XETu8n6Ye3Q+ahtSarc3WgtNWmehIBfA==}
     engines: {node: '>=18'}
+
+  ignore@7.0.5:
+    resolution: {integrity: sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==}
+    engines: {node: '>= 4'}
 
   is-interactive@2.0.0:
     resolution: {integrity: sha512-qP1vozQRI+BMOPcjFzrjXuQvdak2pHNUMZoeG2eRbiSqyvbEf/wQtEOTOX1guk6E3t36RkaqiSt8A/6YElNxLQ==}
@@ -203,6 +210,8 @@ snapshots:
   emoji-regex@10.6.0: {}
 
   get-east-asian-width@1.6.0: {}
+
+  ignore@7.0.5: {}
 
   is-interactive@2.0.0: {}
 

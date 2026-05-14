@@ -1,6 +1,6 @@
 {
   "name": "safesandbox",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Infinite undo for AI coding agents",
   "keywords": [
     "ai",
@@ -43,6 +43,7 @@
     "chalk": "^5.4.1",
     "chokidar": "^4.0.3",
     "commander": "^13.1.0",
+    "ignore": "^7.0.5",
     "ora": "^8.2.0",
     "simple-git": "^3.27.0",
     "zod": "^3.24.2"

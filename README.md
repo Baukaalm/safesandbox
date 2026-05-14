@@ -21,6 +21,8 @@ SafeSandbox is a local-first CLI tool that automatically creates git snapshots w
 - **Manual snapshots** — pin a named checkpoint before a risky prompt
 - **Rollback** — restore your full codebase (including new files) to any snapshot
 - **Timeline** — view a human-readable history of what changed
+- **Prune** — clean up old snapshots to keep the repo lean over months of use
+- **Status** — see snapshot count, last snapshot, and branch size at a glance
 - **Agent rules** — writes `AGENTS.md` with guardrails readable by all major AI agents
 
 ## What it is NOT
@@ -115,6 +117,33 @@ Shows snapshot history, newest first:
 #1 — before adding payments           15m ago
 ```
 
+### `safesandbox status`
+
+Shows snapshot count, last snapshot info, branch size, and config. Also warns if cleanup is recommended:
+
+```
+SafeSandbox status
+
+  Snapshots   42 (last: #42 — 14 files changed in 6 seconds  2m ago)
+  Branch      ✓ safesandbox/snapshots
+  Pack size   1.2 MB
+
+  Config:
+    thresholdFiles:   5
+    thresholdSeconds: 10
+    maxSnapshots:     100
+```
+
+### `safesandbox prune`
+
+Delete old snapshots to keep the repo lean. Runs `git gc` automatically after pruning:
+
+```bash
+safesandbox prune --keep 50          # keep the 50 most recent
+safesandbox prune --older-than 7d    # delete snapshots older than 7 days
+safesandbox prune --keep 50 --force  # skip confirmation
+```
+
 ### `safesandbox rollback <id>`
 
 Restores the full repository to the state at snapshot `<id>`. Also removes any files that didn't exist at that snapshot.
@@ -154,7 +183,8 @@ After `init`, edit `.safesandbox/config.json` to tune behavior:
 |---|---|
 | `thresholdFiles` | Minimum files changed to trigger an auto-snapshot |
 | `thresholdSeconds` | Debounce window — waits this long after the last change before snapshotting |
-| `ignoredPaths` | Paths to exclude from the watcher |
+| `maxSnapshots` | Auto-prune: keep only the N most recent snapshots (omit for unlimited) |
+| `ignoredPaths` | Paths to exclude from the watcher (`.gitignore` is also respected automatically) |
 
 ## Example session
 

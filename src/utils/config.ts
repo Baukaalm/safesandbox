@@ -26,6 +26,7 @@ export type Meta = z.infer<typeof MetaSchema>;
 export const ConfigSchema = z.object({
   thresholdFiles: z.number().default(5),
   thresholdSeconds: z.number().default(10),
+  maxSnapshots: z.number().optional(),
   ignoredPaths: z.array(z.string()).default([
     "node_modules",
     ".git",

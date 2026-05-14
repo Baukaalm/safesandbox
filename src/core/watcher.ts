@@ -1,6 +1,8 @@
 import chokidar, { FSWatcher } from "chokidar";
 import { SimpleGit } from "simple-git";
 import path from "node:path";
+import fs from "node:fs/promises";
+import ignore, { Ignore } from "ignore";
 import { createSnapshot } from "./snapshots.js";
 import { loadConfig } from "../utils/config.js";
 import { formatDuration } from "../utils/format.js";
@@ -36,12 +38,24 @@ type OnSnapshot = (payload: {
   durationMs: number;
 }) => void;
 
+const loadGitignore = async (cwd: string): Promise<Ignore> => {
+  const ig = ignore();
+  try {
+    const raw = await fs.readFile(path.join(cwd, ".gitignore"), "utf-8");
+    ig.add(raw);
+  } catch {
+    // no .gitignore — that's fine
+  }
+  return ig;
+};
+
 export const startWatcher = async (
   cwd: string,
   git: SimpleGit,
   onSnapshot: OnSnapshot,
 ): Promise<FSWatcher> => {
   const cfg = await loadConfig(cwd);
+  const ig = await loadGitignore(cwd);
 
   const configIgnored = cfg.ignoredPaths.map((p) =>
     p.startsWith("*") ? p : `**/${p}/**`,
@@ -111,6 +125,7 @@ export const startWatcher = async (
       return;
     }
     if (filePath.startsWith(".safesandbox")) return;
+    if (ig.ignores(filePath)) return;
     changedPaths.add(filePath);
     if (firstChangeAt === 0) firstChangeAt = Date.now();
     if (debounceTimer) clearTimeout(debounceTimer);

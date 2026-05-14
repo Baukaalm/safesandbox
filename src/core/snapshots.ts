@@ -3,7 +3,7 @@
 
 import { SimpleGit } from "simple-git";
 import { SNAPSHOT_BRANCH, branchExists } from "./git-utils.js";
-import { loadMeta, saveMeta, SnapshotMeta, Meta } from "../utils/config.js";
+import { loadMeta, saveMeta, loadConfig, SnapshotMeta, Meta } from "../utils/config.js";
 
 const getBranchCommit = async (
   git: SimpleGit,
@@ -74,6 +74,16 @@ export const createSnapshot = async (
   };
 
   meta.snapshots.push(snapshot);
+
+  // Auto-prune if maxSnapshots is configured
+  const cfg = await loadConfig(cwd);
+  if (cfg.maxSnapshots && meta.snapshots.length > cfg.maxSnapshots) {
+    const excess = meta.snapshots.length - cfg.maxSnapshots;
+    meta.snapshots = meta.snapshots.slice(excess);
+    const oldest = meta.snapshots[0];
+    await git.raw(["update-ref", `refs/heads/${SNAPSHOT_BRANCH}`, oldest.commit]);
+  }
+
   await saveMeta(cwd, meta);
 
   return snapshot;
