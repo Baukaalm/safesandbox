@@ -175,16 +175,17 @@ After `init`, edit `.safesandbox/config.json` to tune behavior:
 {
   "thresholdFiles": 5,
   "thresholdSeconds": 10,
+  "maxSnapshots": 200,
   "ignoredPaths": ["node_modules", ".git", "dist", "build", ".safesandbox"]
 }
 ```
 
-| Field | Description |
-|---|---|
-| `thresholdFiles` | Minimum files changed to trigger an auto-snapshot |
-| `thresholdSeconds` | Debounce window — waits this long after the last change before snapshotting |
-| `maxSnapshots` | Auto-prune: keep only the N most recent snapshots (omit for unlimited) |
-| `ignoredPaths` | Paths to exclude from the watcher (`.gitignore` is also respected automatically) |
+| Field | Default | Description |
+|---|---|---|
+| `thresholdFiles` | `5` | Minimum files changed to trigger an auto-snapshot |
+| `thresholdSeconds` | `10` | Debounce window — waits this long after the last change before snapshotting |
+| `maxSnapshots` | `200` | Auto-prune: keep only the N most recent snapshots |
+| `ignoredPaths` | see above | Paths to exclude from the watcher (`.gitignore` is also respected automatically) |
 
 ## Example session
 

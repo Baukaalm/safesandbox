@@ -41,7 +41,7 @@ export const statusCommand = async () => {
     console.log(chalk.gray("  Config:"));
     console.log(chalk.gray(`    thresholdFiles:   ${cfg.thresholdFiles}`));
     console.log(chalk.gray(`    thresholdSeconds: ${cfg.thresholdSeconds}`));
-    console.log(chalk.gray(`    maxSnapshots:     ${"maxSnapshots" in cfg ? (cfg as { maxSnapshots?: number }).maxSnapshots ?? "unlimited" : "unlimited"}`));
+    console.log(chalk.gray(`    maxSnapshots:     ${cfg.maxSnapshots}`));
     console.log();
 
     if (total > 50) {

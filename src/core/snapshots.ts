@@ -5,6 +5,11 @@ import { SimpleGit } from "simple-git";
 import { SNAPSHOT_BRANCH, branchExists } from "./git-utils.js";
 import { loadMeta, saveMeta, loadConfig, SnapshotMeta, Meta } from "../utils/config.js";
 
+export type SnapshotResult = {
+  snapshot: SnapshotMeta;
+  limitWarning?: { current: number; max: number };
+};
+
 const getBranchCommit = async (
   git: SimpleGit,
   branch: string,
@@ -15,7 +20,7 @@ export const createSnapshot = async (
   cwd: string,
   reason: string,
   filesChanged: number,
-): Promise<SnapshotMeta | null> => {
+): Promise<SnapshotResult | null> => {
   await git.add(["--all"]);
 
   const tree = (await git.raw(["write-tree"])).trim();
@@ -74,17 +79,13 @@ export const createSnapshot = async (
   };
 
   meta.snapshots.push(snapshot);
-
-  // Auto-prune if maxSnapshots is configured
-  const cfg = await loadConfig(cwd);
-  if (cfg.maxSnapshots && meta.snapshots.length > cfg.maxSnapshots) {
-    const excess = meta.snapshots.length - cfg.maxSnapshots;
-    meta.snapshots = meta.snapshots.slice(excess);
-    const oldest = meta.snapshots[0];
-    await git.raw(["update-ref", `refs/heads/${SNAPSHOT_BRANCH}`, oldest.commit]);
-  }
-
   await saveMeta(cwd, meta);
 
-  return snapshot;
+  const cfg = await loadConfig(cwd);
+  const limitWarning =
+    meta.snapshots.length >= cfg.maxSnapshots
+      ? { current: meta.snapshots.length, max: cfg.maxSnapshots }
+      : undefined;
+
+  return { snapshot, limitWarning };
 };

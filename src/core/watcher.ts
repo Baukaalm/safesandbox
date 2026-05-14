@@ -36,6 +36,7 @@ type OnSnapshot = (payload: {
   reason: string;
   filesChanged: number;
   durationMs: number;
+  limitWarning?: { current: number; max: number };
 }) => void;
 
 const loadGitignore = async (cwd: string): Promise<Ignore> => {
@@ -109,12 +110,12 @@ export const startWatcher = async (
     firstChangeAt = 0;
 
     try {
-      const snapshot = await createSnapshot(git, cwd, reason, count);
-      if (!snapshot) {
+      const result = await createSnapshot(git, cwd, reason, count);
+      if (!result) {
         // Tree identical to previous snapshot — nothing changed meaningfully
         return;
       }
-      onSnapshot({ id: snapshot.id, reason, filesChanged: count, durationMs: duration });
+      onSnapshot({ id: result.snapshot.id, reason, filesChanged: count, durationMs: duration, limitWarning: result.limitWarning });
     } catch (err) {
       console.error("[SafeSandbox] Failed to create snapshot:", err);
     }

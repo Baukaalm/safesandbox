@@ -65,6 +65,7 @@ export const initCommand = async () => {
     await saveConfig(cwd, {
       thresholdFiles: 5,
       thresholdSeconds: 10,
+      maxSnapshots: 200,
       ignoredPaths: ["node_modules", ".git", "dist", "build", ".safesandbox"],
     });
 

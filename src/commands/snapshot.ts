@@ -13,15 +13,23 @@ export const snapshotCommand = async (memo: string | undefined) => {
     const filesChanged = status.files.length;
     const reason = memo?.trim() || "manual snapshot";
 
-    const snapshot = await createSnapshot(git, cwd, reason, filesChanged);
+    const result = await createSnapshot(git, cwd, reason, filesChanged);
 
-    if (!snapshot) {
+    if (!result) {
       console.log(chalk.gray("Nothing changed since last snapshot — skipped."));
       return;
     }
 
-    console.log(chalk.green(`✓ Snapshot #${snapshot.id} created`));
+    console.log(chalk.green(`✓ Snapshot #${result.snapshot.id} created`));
     console.log(chalk.gray(`  Reason: ${reason}`));
+    if (result.limitWarning) {
+      console.log();
+      console.log(chalk.yellow.bold(`⚠  Snapshot limit reached (${result.limitWarning.current}/${result.limitWarning.max})`));
+      console.log(chalk.yellow(`   Too many snapshots slow down Git and can cause it to hang.`));
+      console.log(chalk.gray(`   Clean up: safesandbox prune --keep 50`));
+      console.log(chalk.gray(`   Or raise "maxSnapshots" in .safesandbox/config.json`));
+      console.log(chalk.gray(`   Note: pruned snapshots cannot be recovered.`));
+    }
   } catch (err) {
     console.error(chalk.red("Error:"), err instanceof Error ? err.message : String(err));
     process.exit(1);

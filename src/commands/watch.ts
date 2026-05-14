@@ -12,12 +12,23 @@ export const watchCommand = async () => {
 
     const spinner = ora("Watching for changes...").start();
 
-    const watcher = await startWatcher(cwd, git, ({ id, reason }) => {
+    const watcher = await startWatcher(cwd, git, ({ id, reason, limitWarning }) => {
       spinner.stop();
       console.log();
       console.log(chalk.cyan.bold("[SafeSandbox]"));
       console.log(`Snapshot #${id} created`);
       console.log(`Reason: ${reason}`);
+      if (limitWarning) {
+        console.log();
+        console.log(chalk.yellow.bold(`⚠  Snapshot limit reached (${limitWarning.current}/${limitWarning.max})`));
+        console.log(chalk.yellow(`   Your Git repo is accumulating snapshot history.`));
+        console.log(chalk.yellow(`   Too many snapshots slow down Git and can cause it to hang.`));
+        console.log(chalk.gray(`   Run prune to clean up and reclaim disk space:`));
+        console.log(chalk.cyan(`     safesandbox prune --keep 50`));
+        console.log(chalk.cyan(`     safesandbox prune --older-than 7d`));
+        console.log(chalk.gray(`   Or raise the limit in .safesandbox/config.json → "maxSnapshots".`));
+        console.log(chalk.gray(`   Note: pruned snapshots cannot be recovered.`));
+      }
       spinner.start("Watching for changes...");
     });
 

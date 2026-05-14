@@ -169,17 +169,9 @@ export const rollbackCommand = async (idStr: string, opts: { force?: boolean } =
       );
 
       if (backup) {
-        console.log(
-          chalk.gray(
-            `Created emergency backup snapshot #${backup.id} before rollback.`,
-          ),
-        );
+        console.log(chalk.gray(`Created emergency backup snapshot #${backup.snapshot.id} before rollback.`));
       } else {
-        console.log(
-          chalk.gray(
-            "Working tree identical to last snapshot — no emergency backup needed.",
-          ),
-        );
+        console.log(chalk.gray("Working tree identical to last snapshot — no emergency backup needed."));
       }
     }
 
